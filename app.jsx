@@ -631,7 +631,7 @@ export default function App(){
     var hist=aiMsgs.concat([msg]);
     setAiMsgs(hist);setAiInput("");setAiLoading(true);
     try{
-      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist assistant for "+(settings.name||"a Head of Science")+" at "+(settings.school||"a UK secondary school")+". Help draft professional communications, teaching documents, department admin and leadership tasks. UK English. Concise and practical. Ready-to-use text.",messages:hist.map(function(m){return {role:m.role,content:m.content};})})});
+      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist assistant for "+(settings.name||"a Head of Science")+" at "+(settings.school||"a UK secondary school")+". Help draft professional communications, teaching documents, department admin and leadership tasks. UK English. Concise and practical. Ready-to-use text.",messages:hist.map(function(m){return {role:m.role,content:m.content};})})});
       var data=await r.json();
       var reply=(data.content&&data.content.find(function(b){return b.type==="text";}))||{text:"Sorry, could not generate a response."};
       setAiMsgs(function(prev){return prev.concat([{role:"assistant",content:reply.text}]);});
@@ -644,7 +644,7 @@ export default function App(){
     if(!selGen)return;setGenLoading(true);setGenOutput("");setCopied(false);
     try{
       var prompt=selGen.build(genFields,settings.name,settings.school);
-      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist document drafter for a Head of Science at a UK secondary school. Output ONLY the requested document - no preamble, no explanation. UK English. Ready to copy and use immediately.",messages:[{role:"user",content:prompt}]})});
+      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist document drafter for a Head of Science at a UK secondary school. Output ONLY the requested document - no preamble, no explanation. UK English. Ready to copy and use immediately.",messages:[{role:"user",content:prompt}]})});
       var data=await r.json();
       var reply=(data.content&&data.content.find(function(b){return b.type==="text";}));
       setGenOutput(reply?reply.text:"Sorry, could not generate output.");
@@ -656,7 +656,7 @@ export default function App(){
   async function submitSuggestion(){
     if(!suggestInput.trim())return;setSuggestLoading(true);setSuggestResult(null);
     try{
-      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,system:"You evaluate whether a document automation is feasible for a Head of Science using an AI language model. Be direct and honest. If it needs live school database access, real-time data, genuine curriculum design, legal advice, or truly personalised pedagogy - say no. Respond ONLY with valid JSON, no markdown.",messages:[{role:"user",content:'Suggestion: "'+suggestInput.trim()+'"\nCategory: '+GENS[suggestCat].label+'\n\nJSON: {"feasible":true/false,"reason":"1-2 sentences","generator":{"title":"4-6 words","desc":"one line","saves":"~X mins","fields":[{"key":"k","label":"Label","type":"text|select|textarea","ph":"placeholder","opts":["A","B"]}],"promptTemplate":"detailed prompt using {fieldKey} placeholders"}}\nIf feasible=false, generator=null. Max 4 fields. opts only for select type.'}]})});
+      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,system:"You evaluate whether a document automation is feasible for a Head of Science using an AI language model. Be direct and honest. If it needs live school database access, real-time data, genuine curriculum design, legal advice, or truly personalised pedagogy - say no. Respond ONLY with valid JSON, no markdown.",messages:[{role:"user",content:'Suggestion: "'+suggestInput.trim()+'"\nCategory: '+GENS[suggestCat].label+'\n\nJSON: {"feasible":true/false,"reason":"1-2 sentences","generator":{"title":"4-6 words","desc":"one line","saves":"~X mins","fields":[{"key":"k","label":"Label","type":"text|select|textarea","ph":"placeholder","opts":["A","B"]}],"promptTemplate":"detailed prompt using {fieldKey} placeholders"}}\nIf feasible=false, generator=null. Max 4 fields. opts only for select type.'}]})});
       var data=await r.json();
       var raw=(data.content&&data.content.find(function(b){return b.type==="text";}));
       setSuggestResult(JSON.parse((raw?raw.text:"{}").replace(/```json|```/g,"").trim()));
@@ -748,7 +748,7 @@ export default function App(){
 
       contentBlocks.push({type:"text",text:promptText});
 
-      var r = await fetch("https://api.anthropic.com/v1/messages",{
+      var r = await fetch("/api/claude",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",max_tokens:2000,
@@ -848,7 +848,7 @@ export default function App(){
     var pts=(agenda[selMtId]||[]).filter(function(p){return !p.done;});
     setAgendaGenLoading(true);setAgendaOutput("");
     try{
-      var r=await fetch("https://api.anthropic.com/v1/messages",{
+      var r=await fetch("/api/claude",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",max_tokens:1000,
@@ -871,7 +871,7 @@ export default function App(){
     var desc="Agenda:\n"+pts.map(function(p,i){return (i+1)+". "+p.point;}).join("\n");
     desc+="\n\nAttendees: "+(mt.attendees||"TBC")+"\nLocation: "+(mt.location||"TBC");
     try{
-      var r=await fetch("https://api.anthropic.com/v1/messages",{
+      var r=await fetch("/api/claude",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",max_tokens:500,
@@ -1046,7 +1046,7 @@ export default function App(){
   async function suggestMeals(){
     setMealLoading(true);setMealSugg("");
     try{
-      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,
           system:"You suggest healthy, budget-friendly evening meals for a busy UK family of 4: two adults and children aged 10 and 7. Meals must be quick (under 45 mins), nutritious, appealing to children, and budget-conscious. No preamble.",
           messages:[{role:"user",content:"Suggest 7 evening meals for Mon-Sun. Family favourites include: "+mealFavs.slice(0,6).join(", ")+". Format as exactly 7 lines: Mon: [Meal name] - [one line why it works]"}]})});
@@ -1061,7 +1061,7 @@ export default function App(){
     if(planned.length===0)return;
     setMealLoading(true);
     try{
-      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,
           system:"Generate a shopping list from a meal plan for a UK family of 4. Return ONLY a JSON array, no markdown. Each item has name and category fields. Category must be one of: fruit and veg, dairy, meat and fish, bakery, cupboard, frozen, drinks, household, other.",
           messages:[{role:"user",content:"Meals this week: "+planned.map(function(e){return e[0]+": "+e[1];}).join(", ")+". Family of 4. Return JSON array only."}]})});
