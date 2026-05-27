@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
+import App from './app.jsx'
 
 // Storage polyfill — replaces Claude's window.storage API with localStorage
 // This means all your data persists on your device between sessions
