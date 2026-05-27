@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";;
+import { useState, useRef, useEffect } from "react";
 
 // --- Themes ---
 var THEMES = {
@@ -437,6 +437,9 @@ export default function App(){
   var voiceRecRef = useRef(null);
   // Storage loaded flag
   var stLoaded = useState(false); var loaded=stLoaded[0], setLoaded=stLoaded[1];
+  var stGcal = useState([]); var gcalEvents=stGcal[0], setGcalEvents=stGcal[1];
+  var stGcalLoading = useState(false); var gcalLoading=stGcalLoading[0], setGcalLoading=stGcalLoading[1];
+  var stGcalErr = useState(""); var gcalErr=stGcalErr[0], setGcalErr=stGcalErr[1];
   var stNewShop = useState(""); var newShopItem=stNewShop[0], setNewShopItem=stNewShop[1];
   var stNewShopCat = useState("other"); var newShopCat=stNewShopCat[0], setNewShopCat=stNewShopCat[1];
   var stFamEdit = useState(false); var showFamEdit=stFamEdit[0], setShowFamEdit=stFamEdit[1];
@@ -628,7 +631,7 @@ export default function App(){
     var hist=aiMsgs.concat([msg]);
     setAiMsgs(hist);setAiInput("");setAiLoading(true);
     try{
-      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist assistant for "+(settings.name||"a Head of Science")+" at "+(settings.school||"a UK secondary school")+". Help draft professional communications, teaching documents, department admin and leadership tasks. UK English. Concise and practical. Ready-to-use text.",messages:hist.map(function(m){return {role:m.role,content:m.content};})})});
+      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist assistant for "+(settings.name||"a Head of Science")+" at "+(settings.school||"a UK secondary school")+". Help draft professional communications, teaching documents, department admin and leadership tasks. UK English. Concise and practical. Ready-to-use text.",messages:hist.map(function(m){return {role:m.role,content:m.content};})})});
       var data=await r.json();
       var reply=(data.content&&data.content.find(function(b){return b.type==="text";}))||{text:"Sorry, could not generate a response."};
       setAiMsgs(function(prev){return prev.concat([{role:"assistant",content:reply.text}]);});
@@ -641,7 +644,7 @@ export default function App(){
     if(!selGen)return;setGenLoading(true);setGenOutput("");setCopied(false);
     try{
       var prompt=selGen.build(genFields,settings.name,settings.school);
-      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist document drafter for a Head of Science at a UK secondary school. Output ONLY the requested document - no preamble, no explanation. UK English. Ready to copy and use immediately.",messages:[{role:"user",content:prompt}]})});
+      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a specialist document drafter for a Head of Science at a UK secondary school. Output ONLY the requested document - no preamble, no explanation. UK English. Ready to copy and use immediately.",messages:[{role:"user",content:prompt}]})});
       var data=await r.json();
       var reply=(data.content&&data.content.find(function(b){return b.type==="text";}));
       setGenOutput(reply?reply.text:"Sorry, could not generate output.");
@@ -653,7 +656,7 @@ export default function App(){
   async function submitSuggestion(){
     if(!suggestInput.trim())return;setSuggestLoading(true);setSuggestResult(null);
     try{
-      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,system:"You evaluate whether a document automation is feasible for a Head of Science using an AI language model. Be direct and honest. If it needs live school database access, real-time data, genuine curriculum design, legal advice, or truly personalised pedagogy - say no. Respond ONLY with valid JSON, no markdown.",messages:[{role:"user",content:'Suggestion: "'+suggestInput.trim()+'"\nCategory: '+GENS[suggestCat].label+'\n\nJSON: {"feasible":true/false,"reason":"1-2 sentences","generator":{"title":"4-6 words","desc":"one line","saves":"~X mins","fields":[{"key":"k","label":"Label","type":"text|select|textarea","ph":"placeholder","opts":["A","B"]}],"promptTemplate":"detailed prompt using {fieldKey} placeholders"}}\nIf feasible=false, generator=null. Max 4 fields. opts only for select type.'}]})});
+      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,system:"You evaluate whether a document automation is feasible for a Head of Science using an AI language model. Be direct and honest. If it needs live school database access, real-time data, genuine curriculum design, legal advice, or truly personalised pedagogy - say no. Respond ONLY with valid JSON, no markdown.",messages:[{role:"user",content:'Suggestion: "'+suggestInput.trim()+'"\nCategory: '+GENS[suggestCat].label+'\n\nJSON: {"feasible":true/false,"reason":"1-2 sentences","generator":{"title":"4-6 words","desc":"one line","saves":"~X mins","fields":[{"key":"k","label":"Label","type":"text|select|textarea","ph":"placeholder","opts":["A","B"]}],"promptTemplate":"detailed prompt using {fieldKey} placeholders"}}\nIf feasible=false, generator=null. Max 4 fields. opts only for select type.'}]})});
       var data=await r.json();
       var raw=(data.content&&data.content.find(function(b){return b.type==="text";}));
       setSuggestResult(JSON.parse((raw?raw.text:"{}").replace(/```json|```/g,"").trim()));
@@ -745,7 +748,7 @@ export default function App(){
 
       contentBlocks.push({type:"text",text:promptText});
 
-      var r = await fetch("/api/claude",{
+      var r = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",max_tokens:2000,
@@ -845,7 +848,7 @@ export default function App(){
     var pts=(agenda[selMtId]||[]).filter(function(p){return !p.done;});
     setAgendaGenLoading(true);setAgendaOutput("");
     try{
-      var r=await fetch("/api/claude",{
+      var r=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",max_tokens:1000,
@@ -867,7 +870,20 @@ export default function App(){
     var pts=(agenda[selMtId]||[]).filter(function(p){return !p.done;});
     var desc="Agenda:\n"+pts.map(function(p,i){return (i+1)+". "+p.point;}).join("\n");
     desc+="\n\nAttendees: "+(mt.attendees||"TBC")+"\nLocation: "+(mt.location||"TBC");
-    setCalMsg("To add to Google Calendar: open Google Calendar on your phone and create the event manually. Title: "+mt.name+" | Time: "+mt.day+" "+mt.time+" | Attendees: "+(mt.attendees||"TBC"));
+    try{
+      var r=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",max_tokens:500,
+          system:"You create Google Calendar events using MCP tools. Create the event and confirm success. Be concise.",
+          messages:[{role:"user",content:"Create a Google Calendar event: Title: "+mt.name+". Date: next "+mt.day+". Time: "+mt.time+". Duration: 60 minutes. Description: "+desc+". Confirm when done."}],
+          mcp_servers:[{type:"url",url:"https://calendarmcp.googleapis.com/mcp/v1",name:"google-calendar"}]
+        })
+      });
+      var data=await r.json();
+      var txt=data.content&&data.content.find(function(b){return b.type==="text";});
+      setCalMsg(txt?txt.text:"Event creation attempted - check your Google Calendar.");
+    }catch(e){setCalMsg("Could not connect to Google Calendar - please try again.");}
     setCalLoading(false);
   }
 
@@ -945,6 +961,19 @@ export default function App(){
         title:c.name,sub:(mem.name||mem.role)+(c.location?" · "+c.location:""),
         source:"club",barColor:mem.color,bgColor:mem.color+"18",txColor:mem.color});
     });
+    // Add Google Calendar events for this date
+    gcalEvents.forEach(function(ge){
+      if(!ge.startDate)return;
+      var gdk=dkFromDate(ge.startDate);
+      if(gdk===dateKey){
+        var gtime=ge.allDay?"":String(ge.startDate.getHours()).padStart(2,"0")+":"+String(ge.startDate.getMinutes()).padStart(2,"0");
+        evs.push({t:"gcal",time:gtime||"00:00",endTime:"",
+          title:ge.title,sub:(ge.location||ge.description||"Google Calendar"),
+          source:"gcal",barColor:"#7C3AED",bgColor:"#F3E8FF",txColor:"#4C1D95",
+          allDay:ge.allDay});
+      }
+    });
+
     evs.sort(function(a,b){
       if(a.isDue&&!b.isDue)return -1;
       if(!a.isDue&&b.isDue)return 1;
@@ -973,6 +1002,9 @@ export default function App(){
     var dw2=d2.getDay();
     var dayK2=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dw2];
     return clubs.some(function(c){return c.day===dayK2;});
+  }
+  function calDayHasGcal(dk2){
+    return gcalEvents.some(function(ge){return ge.startDate&&dkFromDate(ge.startDate)===dk2;});
   }
   function calDayHasClash(dk2){
     var evs2=buildCalEvents(dk2);
@@ -1014,7 +1046,7 @@ export default function App(){
   async function suggestMeals(){
     setMealLoading(true);setMealSugg("");
     try{
-      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,
           system:"You suggest healthy, budget-friendly evening meals for a busy UK family of 4: two adults and children aged 10 and 7. Meals must be quick (under 45 mins), nutritious, appealing to children, and budget-conscious. No preamble.",
           messages:[{role:"user",content:"Suggest 7 evening meals for Mon-Sun. Family favourites include: "+mealFavs.slice(0,6).join(", ")+". Format as exactly 7 lines: Mon: [Meal name] - [one line why it works]"}]})});
@@ -1029,7 +1061,7 @@ export default function App(){
     if(planned.length===0)return;
     setMealLoading(true);
     try{
-      var r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,
           system:"Generate a shopping list from a meal plan for a UK family of 4. Return ONLY a JSON array, no markdown. Each item has name and category fields. Category must be one of: fruit and veg, dairy, meat and fish, bakery, cupboard, frozen, drinks, household, other.",
           messages:[{role:"user",content:"Meals this week: "+planned.map(function(e){return e[0]+": "+e[1];}).join(", ")+". Family of 4. Return JSON array only."}]})});
@@ -1236,6 +1268,83 @@ export default function App(){
       )
     );
   }
+
+
+  // ─── Google Calendar iCal integration ──────────────────────────────────────
+  function parseIcalDate(val){
+    val=(val||"").split(";")[0].split(":").slice(-1)[0].trim();
+    var Z=val.endsWith("Z");
+    val=val.replace("Z","");
+    if(val.includes("T")){
+      var y=val.slice(0,4),mo=val.slice(4,6),d=val.slice(6,8),h=val.slice(9,11),mi=val.slice(11,13);
+      var dt=new Date(y+"-"+mo+"-"+d+"T"+h+":"+mi+":00"+(Z?"Z":""));
+      return dt;
+    } else {
+      var y2=val.slice(0,4),mo2=val.slice(4,6),d2=val.slice(6,8);
+      return new Date(y2+"-"+mo2+"-"+d2+"T00:00:00");
+    }
+  }
+
+  function parseIcal(text){
+    var events=[];
+    // Unfold lines and normalize line endings
+    var raw=text;
+    raw=raw.split("\r\n").join("\n").split("\r").join("\n");
+    // Unfold continuation lines (lines starting with space/tab)
+    var unfolded="";
+    var ls=raw.split("\n");
+    for(var x=0;x<ls.length;x++){
+      if(x>0&&(ls[x].charAt(0)===" "||ls[x].charAt(0)==="\t")){
+        unfolded+=ls[x].slice(1);
+      } else {
+        if(x>0)unfolded+="\n";
+        unfolded+=ls[x];
+      }
+    }
+    var lines=unfolded.split("\n");
+    var inEv=false; var ev={};
+    for(var i=0;i<lines.length;i++){
+      var ln=lines[i];
+      if(ln==="BEGIN:VEVENT"){inEv=true;ev={};}
+      else if(ln==="END:VEVENT"){
+        if(ev.title&&ev.startDate){events.push(ev);}
+        inEv=false;
+      } else if(inEv){
+        var colon=ln.indexOf(":");
+        if(colon<0)continue;
+        var key=ln.slice(0,colon).split(";")[0].toUpperCase();
+        var val=ln.slice(colon+1);
+        if(key==="SUMMARY") ev.title=val;
+        else if(key==="DTSTART"){ev.startDate=parseIcalDate(ln);ev.allDay=!ln.includes("T");}
+        else if(key==="DTEND") ev.endDate=parseIcalDate(ln);
+        else if(key==="DESCRIPTION") ev.description=val.replace(/\\n/g," ").slice(0,100);
+        else if(key==="LOCATION") ev.location=val.slice(0,80);
+      }
+    }
+    return events;
+  }
+
+  function dkFromDate(d){
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+
+  async function fetchGoogleCalendar(){
+    var url=settings.gcalUrl;
+    if(!url||!url.includes("calendar.google.com"))return;
+    setGcalLoading(true);setGcalErr("");
+    try{
+      var r=await fetch("/api/calendar?url="+encodeURIComponent(url));
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      var text=await r.text();
+      var parsed=parseIcal(text);
+      setGcalEvents(parsed);
+    }catch(e){
+      setGcalErr("Could not load calendar. Check your iCal URL in Settings.");
+    }
+    setGcalLoading(false);
+  }
+
+  useEffect(function(){if(loaded&&settings.gcalUrl)fetchGoogleCalendar();},[loaded,settings.gcalUrl]);
 
   var homeBodyFont = (HOME_FONT_OPTIONS[homeSettings.homeFont]||HOME_FONT_OPTIONS.nunito).css;
   var css = "@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&family=Nunito:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap');\n*{box-sizing:border-box;margin:0;padding:0}\n::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:"+th.surface2+"}::-webkit-scrollbar-thumb{background:"+th.border+";border-radius:4px}\n.hov:hover{background:"+th.surface2+" !important}\n.nb{transition:all 0.15s;cursor:pointer;border:none}.nb:hover{opacity:0.8}\n.ck{cursor:pointer}.ck:hover{transform:scale(1.1)}\ninput:focus,select:focus,textarea:focus{border-color:"+th.accent+" !important;box-shadow:0 0 0 3px "+th.accent+"18}\n@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fu 0.25s ease forwards}\n@keyframes aiDot{0%,100%{opacity:0.3;transform:scale(0.75)}50%{opacity:1;transform:scale(1)}}\n@keyframes pp{0%{box-shadow:0 0 0 0 "+th.accent+"44}70%{box-shadow:0 0 0 14px transparent}100%{box-shadow:0 0 0 0 transparent}}\n.pa{animation:pp 2s infinite}\n.gc{transition:all 0.16s;cursor:pointer}.gc:hover{transform:translateY(-2px)}\n@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}\n.shimmer{background:linear-gradient(90deg,"+th.surface+" 25%,"+th.surface2+" 50%,"+th.surface+" 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}\n.mb{cursor:pointer;border:none;background:none}.mb:hover{transform:scale(1.2)}@keyframes spin{to{transform:rotate(360deg)}}" + (appMode==="home" ? ".home-mode,.home-mode *{font-family:"+homeBodyFont+" !important}" : "");
@@ -2249,6 +2358,7 @@ export default function App(){
                             {hw&&<div style={{height:3,borderRadius:2,background:"#378ADD"}}/>}
                             {hh&&<div style={{height:3,borderRadius:2,background:"#639922"}}/>}
                             {hc&&<div style={{height:3,borderRadius:2,background:"#BA7517"}}/>}
+                            {calDayHasGcal(dk)&&<div style={{height:3,borderRadius:2,background:"#7C3AED"}}/>}
                           </div>
                         </div>
                       );
@@ -2302,6 +2412,7 @@ export default function App(){
                             {isCl&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:8,background:"#FAEEDA",color:"#633806",border:"0.5px solid #EF9F27"}}>Clash</span>}
                             {e.t==="work"&&!isCl&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:8,background:"#E6F1FB",color:"#0C447C"}}>Work</span>}
                             {e.t==="home"&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:8,background:"#EAF3DE",color:"#27500A"}}>Home</span>}
+                            {e.t==="gcal"&&<span style={{fontSize:10,padding:"1px 6px",borderRadius:8,background:"#F3E8FF",color:"#4C1D95"}}>Google Cal</span>}
                           </div>
                           <div style={{fontSize:11,color:th.textMuted}}>{srcIcon+" "+e.sub}</div>
                         </div>
@@ -2312,7 +2423,7 @@ export default function App(){
               )}
 
               <div style={{display:"flex",gap:12,padding:"7px 14px",borderTop:"1px solid "+th.border,flexWrap:"wrap"}}>
-                {[{c:"#378ADD",l:"Work / Timetable"},{c:"#639922",l:"Home"},{c:"#97C459",l:"Form reg"},{c:"#BA7517",l:"Clash"}].map(function(x,i){return(
+                {[{c:"#378ADD",l:"Work / Timetable"},{c:"#639922",l:"Home"},{c:"#97C459",l:"Form reg"},{c:"#BA7517",l:"Clash"},{c:"#7C3AED",l:"Google Calendar"}].map(function(x,i){return(
                   <div key={i} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:th.textMuted}}>
                     <div style={{width:10,height:3,borderRadius:2,background:x.c}}/>
                     {x.l}
