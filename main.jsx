@@ -2,8 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './app.jsx'
 
-var SUPA_URL = 'YOUR_PROJECT_URL_HERE';
-var SUPA_KEY = 'YOUR_ANON_KEY_HERE';
+var SUPA_URL = 'https://rsubyryjomwakxxhcdrl.supabase.co';
+var SUPA_KEY = 'sb_secret_EtSFGNxutCm7N-SAZMdbsA_FN12OSdN';
 
 var headers = {
   'apikey': SUPA_KEY,
