@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './app.jsx'
 
 var SUPA_URL = 'https://rsubyryjomwakxxhcdrl.supabase.co';
-var SUPA_KEY = 'sb_publishable_kuKkNb5VyLywFmuSg6ceaQ_zkmNH...';
+var SUPA_KEY = 'sb_publishable_sZ5_4eJFb1i93zJKCXXp3g_ZmH5pjCu';
 
 var headers = {
   'apikey': SUPA_KEY,
